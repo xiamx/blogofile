@@ -29,7 +29,7 @@ class Server(threading.Thread):
         self.sa = self.httpd.socket.getsockname()
 
     def run(self):
-        print(("Blogofile server started on port {0}...".format(self.sa[1])))
+        print("Blogofile server started on port {0}...".format(self.sa[1]))
         self.httpd.serve_forever()
 
     def shutdown(self):
