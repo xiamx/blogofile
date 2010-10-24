@@ -116,7 +116,7 @@ def main(cmd=None):
         logger.info("Setting very verbose mode")
 
     if not os.path.isdir(args.src_dir): #pragma: no cover
-        print(("source dir does not exist : %s" % args.src_dir))
+        print("source dir does not exist : {0}".format(args.src_dir))
         sys.exit(1)
     os.chdir(args.src_dir)
 
