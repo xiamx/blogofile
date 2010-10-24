@@ -10,13 +10,11 @@ __date__   = "Tue Jul 28 20:40:29 2009"
 import os
 import sys
 
-import util
-import writer
 import blogofile_bf as bf
-import cache
-import controller
-import site_init
-import filter
+from . import cache
+from . import controller
+from . import site_init
+from . import filter
 
 bf.config = sys.modules['blogofile.config']
 
@@ -43,15 +41,15 @@ def recompile():
     global site
     site.compiled_file_ignore_patterns = []
     for p in site.file_ignore_patterns:
-        if isinstance(p, basestring):
+        if isinstance(p, str):
             site.compiled_file_ignore_patterns.append(
                 re.compile(p, re.IGNORECASE))
         else:
             #p could just be a pre-compiled regex
             site.compiled_file_ignore_patterns.append(p)
-    import urlparse
+    import urllib.parse
     global blog
-    blog.url = urlparse.urljoin(site.url, blog.path)
+    blog.url = urllib.parse.urljoin(site.url, blog.path)
         
 def __load_config(path=None):
     #Strategy:
@@ -64,12 +62,12 @@ def __load_config(path=None):
     filter.preload_filters()
     controller.load_controllers()
     if path:
-        execfile(path)
+        exec(compile(open(path).read(), path, 'exec'))
     #config is now in locals() but needs to be in globals()
-    for k, v in locals().items():
+    for k, v in list(locals().items()):
         globals()[k] = v
     #Override any options (from unit tests)
-    for k, v in override_options.items():
+    for k, v in list(override_options.items()):
         if "." in k:
             parts = k.split(".")
             cache_object = ".".join(parts[:-1])

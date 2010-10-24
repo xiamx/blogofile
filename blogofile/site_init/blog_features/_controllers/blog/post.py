@@ -13,14 +13,13 @@ import sys
 import datetime
 import re
 import operator
-import urlparse
+import urllib.parse
 import hashlib
 import codecs
 
 import pytz
 import yaml
 import logging
-import BeautifulSoup
 
 import blogofile_bf as bf
 
@@ -82,8 +81,8 @@ class Post(object):
         self.categories = set()
         self.tags = set()
         self.permalink = None
-        self.content = u""
-        self.excerpt = u""
+        self.content = ""
+        self.excerpt = ""
         self.filename = filename
         self.author = ""
         self.guid = None
@@ -135,34 +134,37 @@ class Post(object):
             except AttributeError:
                 self.excerpt = self.__excerpt(length)
 
+    # BeatufilSoup is pretty broken these days...
+    # This is the only portion of blogofile that depends on it,
+    # so commenting out for now.. to be rewritten later
     def __excerpt(self, num_words=50):
-        #Default post excerpting function
-        #Can be overridden in _config.py by
-        #defining post_excerpt(content,num_words)
-        if len(self.excerpt) == 0:
-             """Retrieve excerpt from article"""
-             s = BeautifulSoup.BeautifulSoup(self.content)
-             # get rid of javascript, noscript and css
-             [[tree.extract() for tree in s(elem)] for elem in (
-                     'script', 'noscript', 'style')]
-             # get rid of doctype
-             subtree = s.findAll(text=re.compile("DOCTYPE|xml"))
-             [tree.extract() for tree in subtree]
-             # remove headers
-             [[tree.extract() for tree in s(elem)] for elem in (
-                     'h1', 'h2', 'h3', 'h4', 'h5', 'h6')]
-             text = ''.join(s.findAll(text=True))\
-                                 .replace("\n", "").split(" ")
-             return " ".join(text[:num_words]) + '...'
+        return "Blogofile post excerpting is broken right now, sorry."
+    
+    # def __excerpt(self, num_words=50):
+    #     if len(self.excerpt) == 0:
+    #          """Retrieve excerpt from article"""
+    #          s = BeautifulSoup.BeautifulSoup(self.content)
+    #          # get rid of javascript, noscript and css
+    #          [[tree.extract() for tree in s(elem)] for elem in (
+    #                  'script', 'noscript', 'style')]
+    #          # get rid of doctype
+    #          subtree = s.findAll(text=re.compile("DOCTYPE|xml"))
+    #          [tree.extract() for tree in subtree]
+    #          # remove headers
+    #          [[tree.extract() for tree in s(elem)] for elem in (
+    #                  'h1', 'h2', 'h3', 'h4', 'h5', 'h6')]
+    #          text = ''.join(s.findAll(text=True))\
+    #                              .replace("\n", "").split(" ")
+    #          return " ".join(text[:num_words]) + '...'
         
     def __post_process(self):
         # fill in empty default value
         if not self.title:
-            self.title = u"Untitled - {0}".format(
+            self.title = "Untitled - {0}".format(
                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
          
         if not self.date:
-            self.date = datetime.datetime.now(pytz.timezone(self.__timezone))
+            self.date = datetime.datetime.now()
         if not self.updated:
             self.updated = self.date
 
@@ -203,7 +205,7 @@ class Post(object):
         try:
             self.permalink = y['permalink']
             if self.permalink.startswith("/"):
-                self.permalink = urlparse.urljoin(bf.config.site.url,
+                self.permalink = urllib.parse.urljoin(bf.config.site.url,
                         self.permalink)
             #Ensure that the permalink is for the same site as bf.config.site.url
             if not self.permalink.startswith(bf.config.site.url):
@@ -217,13 +219,11 @@ class Post(object):
         except KeyError:
             self.guid = self.permalink
         try:
-            self.date = pytz.timezone(self.__timezone).localize(
-                datetime.datetime.strptime(y['date'], config.date_format))
+            self.date = datetime.datetime.strptime(y['date'], config.date_format)
         except KeyError:
             pass
         try:
-            self.updated = pytz.timezone(self.__timezone).localize(
-                datetime.datetime.strptime(y['updated'], config.date_format))
+            self.updated = datetime.datetime.strptime(y['updated'], config.date_format)
         except KeyError:
             pass
         try:
@@ -249,13 +249,13 @@ class Post(object):
         except KeyError:
             self.draft = False
         # Load the rest of the fields that don't need processing:
-        for field, value in y.items():
+        for field, value in list(y.items()):
             if field not in fields_need_processing:
                 setattr(self,field,value)
         
     def permapath(self):
         """Get just the path portion of a permalink"""
-        return urlparse.urlparse(self.permalink)[2]
+        return urllib.parse.urlparse(self.permalink)[2]
 
     def __cmp__(self, other_post):
         "Posts should be comparable by date"
@@ -269,13 +269,13 @@ class Post(object):
             #Always generate the path from the permalink
             return self.permapath()
         else:
-            raise AttributeError, name
+            raise AttributeError(name)
 
 
 class Category(object):
 
     def __init__(self, name):
-        self.name = unicode(name)
+        self.name = str(name)
         # TODO: slugification should be abstracted out somewhere reusable
         # TODO: consider making url_name and path read-only properties?
         self.url_name = self.name.lower().replace(" ", "-")
@@ -294,14 +294,20 @@ class Category(object):
 
     def __repr__(self):
         return self.name
-    
-    # FIXME: remove the first __cmp__ since the second one overwrites it?
-    def __cmp__(self, other):
-        return cmp(self.name, other.name)
 
-    def __cmp__(self, other):
-        return self is other
-
+    #Eech.. Python 2.x comparisons were so much more succinct with __cmp__
+    def __lt__(self, other):
+        return self.name < other.name
+    def __eq__(self, other):
+        return not self<other and not other<self
+    def __ne__(self, other):
+      return self<other or other<self
+    def __gt__(self, other):
+        return other<self
+    def __ge__(self, other):
+        return not self<other
+    def __le__(self, other):
+        return not other<self
 
 def parse_posts(directory):
     """Retrieve all the posts from the directory specified.
@@ -319,12 +325,8 @@ def parse_posts(directory):
     for post_path in post_paths:
         post_fn = os.path.split(post_path)[1]
         logger.debug("Parsing post: {0}".format(post_path))
-        #IMO codecs.open is broken on Win32.
-        #It refuses to open files without replacing newlines with CR+LF
-        #reverting to regular open and decode:
         try:
-            src = open(post_path, "r").read().decode(
-                    bf.config.controllers.blog.post_encoding)
+            src = open(post_path, "r").read()
         except:
             logger.exception("Error reading post: {0}".format(post_path))
             raise

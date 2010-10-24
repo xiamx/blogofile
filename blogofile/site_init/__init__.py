@@ -1,7 +1,7 @@
 import os
 import pkgutil
 import zipfile
-import StringIO
+import io
 import logging
 import shutil
 import imp
@@ -64,7 +64,7 @@ def do_help(): #pragma: no cover
     print("Available site templates:\n")
     for meta in available_sites:
         site, description = meta[:2]
-        print("   {0}- {1}".format(site.ljust(20), description))
+        print(("   {0}- {1}".format(site.ljust(20), description)))
     print("")
     print("For example, create a simple site, with a blog, and no theme:\n")
     print("   blogofile init simple_blog\n")
@@ -100,7 +100,7 @@ def import_site_init(name):
     else:
         logger.info("Initializing site from zip file")
         zip_data = pkgutil.get_data("blogofile.site_init", name + ".zip")
-        zip_file = zipfile.ZipFile(StringIO.StringIO(zip_data))
+        zip_file = zipfile.ZipFile(io.StringIO(zip_data))
         for name in zip_file.namelist():
             if name.endswith('/'):
                 util.mkdir(name)
@@ -119,12 +119,12 @@ def do_init(args):
             do_help()
             return
         if len(os.listdir(args.src_dir)) > 0 : #pragma: no cover
-            print("This directory is not empty, will not attempt to " \
-                    "initialize here : {0}".format(args.src_dir))
+            print(("This directory is not empty, will not attempt to " \
+                    "initialize here : {0}".format(args.src_dir)))
             return
         
-        print("Initializing the {0} site template...".format(
-                args.SITE_TEMPLATE))
+        print(("Initializing the {0} site template...".format(
+                args.SITE_TEMPLATE)))
         template = site_modules[args.SITE_TEMPLATE]
         import_site_init(template)
         try:

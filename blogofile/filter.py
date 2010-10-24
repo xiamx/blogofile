@@ -4,11 +4,11 @@ import logging
 import imp
 import operator
 
-import util
+from . import util
 
 logger = logging.getLogger("blogofile.filter")
 
-from cache import bf
+from .cache import bf
 bf.filter = sys.modules['blogofile.filter']
 
 __loaded_filters = {} #name -> mod
@@ -25,8 +25,7 @@ def run_chain(chain, content):
     Works with either a string or a sequence of filters"""
     if chain is None: #pragma: no cover
         return content
-    if not hasattr(chain, '__iter__'):
-        #Not a sequence, must be a string, parse it
+    if isinstance(chain, str):
         chain = parse_chain(chain)
     for fn in chain:
         f = load_filter(fn)
@@ -68,7 +67,7 @@ def preload_filters(directory="_filters"):
 def init_filters():
     """Filters have an optional init method that runs before the site is 
     built"""
-    for filt in bf.config.filters.values():
+    for filt in list(bf.config.filters.values()):
         if "mod" in filt:
             try:
                 filt.mod.init()
@@ -105,12 +104,12 @@ def load_filter(name):
             except:
                 pass
             #Load the default blogofile config for filters:
-            for k, v in default_filter_config.items():
+            for k, v in list(default_filter_config.items()):
                 bf.config.filters[name][k] = v
             #Load any filter defined defaults:
             try:
                 filter_config = getattr(mod, "config")
-                for k, v in filter_config.items():
+                for k, v in list(filter_config.items()):
                     if "." in k:
                         #This is a hierarchical setting
                         tail = bf.config.filters[name]

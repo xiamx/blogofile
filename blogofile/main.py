@@ -32,12 +32,12 @@ import time
 
 import argparse
 
-import cache
-from cache import bf
-from writer import Writer
-import config
-import site_init
-import util
+from . import cache
+from .cache import bf
+from .writer import Writer
+from . import config
+from . import site_init
+from . import util
 
 logging.basicConfig()
 logger = logging.getLogger("blogofile")
@@ -116,7 +116,7 @@ def main(cmd=None):
         logger.info("Setting very verbose mode")
 
     if not os.path.isdir(args.src_dir): #pragma: no cover
-        print("source dir does not exist : %s" % args.src_dir)
+        print(("source dir does not exist : %s" % args.src_dir))
         sys.exit(1)
     os.chdir(args.src_dir)
 
@@ -151,11 +151,11 @@ def do_help(args): #pragma: no cover
         # Print help for each subcommand requested.
         for subcommand in args.command:
             #TODO: consider switching to new-style print syntax?
-            print >>sys.stderr, "{0} - {1}".format(
-                    subcommand, helptext[subcommand])
+            print("{0} - {1}".format(
+                    subcommand, helptext[subcommand]), file=sys.stderr)
             parser = subparsers.choices[subcommand]
             parser.print_help()
-            print >>sys.stderr, "\n"
+            print("\n", file=sys.stderr)
             #Perform any extra help tasks:
             if hasattr(parser, "extra_help"):
                 parser.extra_help()
@@ -166,14 +166,13 @@ def config_init(args):
         # We already changed to the directory specified with --src-dir
         config.init("_config.py")
     except config.ConfigNotFoundException: #pragma: no cover
-        print >>sys.stderr, \
-                "No configuration found in source dir: {0}".format(args.src_dir)
+        print("No configuration found in source dir: {0}".format(args.src_dir), file=sys.stderr)
         parser.exit(1, "Want to make a new site? Try `blogofile init`\n")
  
 
 def do_serve(args): #pragma: no cover
     config_init(args)
-    import server
+    from . import server
     bfserver = server.Server(args.PORT)
     bfserver.start()
     while not bfserver.is_shutdown:

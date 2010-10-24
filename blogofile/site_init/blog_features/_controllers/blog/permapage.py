@@ -1,4 +1,4 @@
-import urlparse
+import urllib.parse
 from blogofile.cache import bf
 import re
 

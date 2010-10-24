@@ -15,8 +15,8 @@ import wordpress_schema
 if __name__ == '__main__':
     #Output textile files in ./_posts
     if os.path.isdir("_posts"):
-        print "There's already a _posts directory here, "\
-                "I'm not going to overwrite it."
+        print("There's already a _posts directory here, "\
+                "I'm not going to overwrite it.")
         sys.exit(1)
     else:
         os.mkdir("_posts")
@@ -33,7 +33,7 @@ if __name__ == '__main__':
         fn = "{0}. {1}.html".format(
                 str(post.id).zfill(4),
                 post.post_name.strip())
-        print "writing " + fn
+        print("writing " + fn)
         f = open(os.path.join("_posts", fn), "w")
         f.write("---\n")
         f.write(yaml.dump(yaml_data, default_flow_style=False))

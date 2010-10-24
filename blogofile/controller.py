@@ -53,7 +53,7 @@ import operator
 import imp
 import logging
 
-from cache import bf
+from .cache import bf
 
 logger = logging.getLogger("blogofile.controller")
 
@@ -86,7 +86,7 @@ def __find_controller_names(directory="_controllers"):
 def init_controllers():
     """Controllers have an optional init method that runs before the run
     method"""
-    for controller in sorted(bf.config.controllers.values(),
+    for controller in sorted(list(bf.config.controllers.values()),
             key=operator.attrgetter("priority")):
         try:
             if "mod" in controller:
@@ -115,19 +115,19 @@ def load_controller(name, directory="_controllers"):
         try:
             sys.dont_write_bytecode = True
             controller = __import__(name)
-        except (ImportError,),e:
+        except (ImportError,) as e:
             logger.error(
                 "Cannot import controller : {0} ({1})".format(name, e))
             raise
         # Remember the actual imported module
         bf.config.controllers[name].mod = controller
         # Load the blogofile defaults for controllers:
-        for k, v in default_controller_config.items():
+        for k, v in list(default_controller_config.items()):
             bf.config.controllers[name][k] = v
         # Load any of the controller defined defaults:
         try:
             controller_config = getattr(controller, "config")
-            for k, v in controller_config.items():
+            for k, v in list(controller_config.items()):
                 if k != "enabled":
                     if "." in k:
                         #This is a hierarchical setting
@@ -174,7 +174,7 @@ def defined_controllers(namespace=bf, only_enabled=True):
     ['two', 'three', 'one']
     """
     controller_priorities = [] # [(controller_name, priority),...]
-    for name, settings in namespace.config.controllers.items():
+    for name, settings in list(namespace.config.controllers.items()):
         #Get only the ones that are enabled:
         c = namespace.config.controllers[name]
         if "enabled" not in c or c['enabled'] == False:
