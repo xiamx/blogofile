@@ -100,7 +100,7 @@ def import_site_init(name):
     else:
         logger.info("Initializing site from zip file")
         zip_data = pkgutil.get_data("blogofile.site_init", name + ".zip")
-        zip_file = zipfile.ZipFile(io.StringIO(zip_data))
+        zip_file = zipfile.ZipFile(io.BytesIO(zip_data))
         for name in zip_file.namelist():
             if name.endswith('/'):
                 util.mkdir(name)
