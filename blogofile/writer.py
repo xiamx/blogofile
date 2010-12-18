@@ -12,7 +12,7 @@ __date__   = "Tue Feb  3 12:50:17 2009"
 import logging
 import os
 import shutil
-import urlparse
+import urllib.parse
 import re
 import operator
 import imp
@@ -20,13 +20,12 @@ import imp
 from mako.template import Template
 from mako.lookup import TemplateLookup
 from mako import exceptions as mako_exceptions
-import BeautifulSoup
 
-import util
-import config
-import cache
-import filter
-import controller
+from . import util
+from . import config
+from . import cache
+from . import filter
+from . import controller
 
 logger = logging.getLogger("blogofile.writer")
 
@@ -108,12 +107,12 @@ class Writer(object):
                     #Process this template file
                     t_name = t_fn[:-5]
                     t_file = open(t_fn_path)
-                    template = Template(t_file.read().decode("utf-8"),
+                    template = Template(t_file.read(),
                                         output_encoding="utf-8",
                                         lookup=self.template_lookup)
                     t_file.close()
                     path = util.path_join(self.output_dir, root, t_name)
-                    html_file = open(path, "w")
+                    html_file = open(path, "bw")
                     html = self.template_render(template)
                     #Write to disk
                     html_file.write(html)
@@ -141,13 +140,13 @@ class Writer(object):
         self.bf.template_context.template_name = template.uri
         attrs['bf'] = self.bf
         #Provide the template with other user defined namespaces:
-        for name, obj in self.bf.config.site.template_vars.items():
+        for name, obj in list(self.bf.config.site.template_vars.items()):
             attrs[name] = obj
         try:
             return template.render(**attrs)
         except: #pragma: no cover
             logger.error("Error rendering template")
-            print(mako_exceptions.text_error_template().render())
+            print((mako_exceptions.text_error_template().render()))
         del self.bf.template_context
 
     def materialize_template(self, template_name, location, attrs={}):
@@ -158,6 +157,6 @@ class Writer(object):
         path = util.path_join(self.output_dir, location)
         #Create the path if it doesn't exist:
         util.mkdir(os.path.split(path)[0])
-        f = open(path, "w")
+        f = open(path, "bw")
         f.write(rendered)
         f.close()
